@@ -5,18 +5,17 @@ import java.util.Scanner;
 import java.lang.System;
 
 public class Person {
+    public HashMap<String, String> person = new HashMap<String, String>();
     public static Scanner sc = new Scanner(System.in);
-    public static String name() {
+    public String name() {
         System.out.print("Name, please.\n>> ");
         return sc.nextLine();
     }
-    public static String address() {
-        sc.nextLine();
+    public String address() {
         System.out.print("Address, please.\n>> ");
         return sc.nextLine();
     }
-    public static String phone() {
-        sc.nextLine();
+    public String phone() {
         System.out.print("Phone, please.\n>> ");
         int number = 0;
         String string_number = "";
@@ -39,11 +38,12 @@ public class Person {
         } catch (Exception ValueError) {System.out.println("Uh oh! ur phone # is invalid!");}
         return string_number;
     }
-    public static void main(String[] args) {
-        HashMap<String, String> person = new HashMap<String, String>();
+    public void populate() {
         person.put("name", name());
         person.put("address", address());
         person.put("phone", phone());
-        System.out.println(person);
+    }
+    public static void main(String[] args) {
+        System.out.println("Person initalized.");
     }
 }
