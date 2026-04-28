@@ -6,6 +6,7 @@ build/
 .kotlin
 .git/
 .gitignore
+python/FileEditor.py
 
 ### IntelliJ IDEA ###
 .idea/modules.xml
