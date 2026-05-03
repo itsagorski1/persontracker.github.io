@@ -1,3 +1,3 @@
 window.PERSON_TRACKER_CONFIG = {
-    apiBaseUrl: ""
-};
+    apiBaseUrl: "https://persontracker-api.onrender.com/"
+}
