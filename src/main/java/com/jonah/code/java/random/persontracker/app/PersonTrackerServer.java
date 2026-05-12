@@ -38,6 +38,7 @@ public class PersonTrackerServer {
         server.createContext("/api/people", exchange -> handlePeople(exchange, repository));
         server.createContext("/api/marriages", exchange -> handleMarriage(exchange, repository));
         server.createContext("/api/divorces", exchange -> handleDivorce(exchange, repository));
+        server.createContext("/api/education", PersonTrackerServer::handleEducation);
         server.createContext("/", PersonTrackerServer::handleStatic);
         server.setExecutor(Executors.newCachedThreadPool());
         server.start();
@@ -258,6 +259,38 @@ public class PersonTrackerServer {
         }
     }
 
+    private static void handleEducation(HttpExchange exchange) throws IOException {
+        addCorsHeaders(exchange);
+        if (handleOptions(exchange)) {
+            return;
+        }
+        if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+            sendError(exchange, 405, "Method not allowed.");
+            return;
+        }
+
+        try {
+            EducationRequest request = readJson(exchange, EducationRequest.class);
+            String validationError = validateEducation(request);
+            if (validationError != null) {
+                sendError(exchange, 400, validationError);
+                return;
+            }
+
+            request.setName(request.getName().trim());
+            request.setAddress(request.getAddress().trim());
+            request.setType(request.getType().trim());
+            request.setGrades(trimToNull(request.getGrades()));
+            request.setYearStarted(trimToNull(request.getYearStarted()));
+            request.setYearCompleted(trimToNull(request.getYearCompleted()));
+            request.setNotes(trimToNull(request.getNotes()));
+
+            sendJson(exchange, 201, request);
+        } catch (IOException error) {
+            sendError(exchange, 400, "Invalid JSON body.");
+        }
+    }
+
     private static <T> T readJson(HttpExchange exchange, Class<T> type) throws IOException {
         try (InputStream inputStream = exchange.getRequestBody()) {
             return MAPPER.readValue(inputStream, type);
@@ -289,8 +322,32 @@ public class PersonTrackerServer {
         return null;
     }
 
+    private static String validateEducation(EducationRequest request) {
+        if (request == null) {
+            return "Request body is required.";
+        }
+        if (request.getName() == null || request.getName().trim().isEmpty()) {
+            return "Education name is required.";
+        }
+        if (request.getAddress() == null || request.getAddress().trim().isEmpty()) {
+            return "Education address is required.";
+        }
+        if (request.getType() == null || request.getType().trim().isEmpty()) {
+            return "Education type is required.";
+        }
+        return null;
+    }
+
     private static String normalizePhone(String input) {
         return input == null ? "" : input.replaceAll("\\D", "");
+    }
+
+    private static String trimToNull(String input) {
+        if (input == null) {
+            return null;
+        }
+        String trimmed = input.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private static String timestamp() {
