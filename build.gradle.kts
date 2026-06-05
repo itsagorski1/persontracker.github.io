@@ -1,6 +1,7 @@
 plugins {
     id("java")
     id("application")
+    id("war")
 }
 
 group = "com.jonah.code.java.random.persontracker"
@@ -8,6 +9,9 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    implementation("com.auth0:mvc-auth-commons:1.11.1")
+    implementation("javax.servlet:javax.servlet-api:3.1.0")
+    implementation("javax.servlet:jstl:1.2")
 }
 
 dependencies {

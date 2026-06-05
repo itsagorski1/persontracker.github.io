@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+         http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd"
+         version="3.1">
+
+    <display-name>Auth0 Servlet Example</display-name>
+
+    <!-- Auth0 Configuration -->
+    <context-param>
+        <param-name>com.auth0.domain</param-name>
+        <param-value>dev-t5au832jeue0bkgg.us.auth0.com</param-value>
+    </context-param>
+    <context-param>
+        <param-name>com.auth0.clientId</param-name>
+        <param-value>nAds2oxhjFDFIGLG3R0bZ1jnYFN2N4fG</param-value>
+    </context-param>
+    <context-param>
+        <param-name>com.auth0.clientSecret</param-name>
+        <param-value>9waO8D_S6fezx1mEIAF5VaAXpykJMBFSK-ck4WegQ40DpfqG2E</param-value>
+    </context-param>
+</web-app>

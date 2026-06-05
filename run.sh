@@ -1,4 +1,4 @@
-!#/bin/sh
-brew service start mongodb/brew/mongodb-community
+#!/bin/sh
+brew services start mongodb/brew/mongodb-community
 ./gradlew run
-brew service stop mongodb/brew/mongodb-community
+brew services stop mongodb/brew/mongodb-community
