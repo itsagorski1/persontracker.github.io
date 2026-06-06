@@ -1,62 +1,30 @@
 package com.auth0.example;
 
-import com.auth0.AuthenticationController;
-import com.auth0.IdentityVerificationException;
 import com.auth0.SessionUtils;
-import com.auth0.Tokens;
 
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 
-@WebServlet(urlPatterns = {"/callback"})
-public class CallbackServlet extends HttpServlet {
-
-    private AuthenticationController authenticationController;
+@WebServlet(urlPatterns = {"/profile"})
+public class ProfileServlet extends HttpServlet {
 
     @Override
-    public void init(ServletConfig config) throws ServletException {
-        super.init(config);
-        try {
-            authenticationController = AuthenticationControllerProvider.getInstance(config);
-        } catch (UnsupportedEncodingException e) {
-            throw new ServletException("Couldn't create the AuthenticationController instance. Check the configuration.", e);
-        }
-    }
-
-    @Override
-    public void doGet(HttpServletRequest req, HttpServletResponse res)
+    protected void doGet(HttpServletRequest req, HttpServletResponse res)
             throws IOException, ServletException {
-        handleCallback(req, res);
-    }
+        String accessToken = (String) SessionUtils.get(req, "accessToken");
+        String idToken = (String) SessionUtils.get(req, "idToken");
 
-    @Override
-    public void doPost(HttpServletRequest req, HttpServletResponse res)
-            throws IOException, ServletException {
-        handleCallback(req, res);
-    }
-
-    private void handleCallback(HttpServletRequest req, HttpServletResponse res)
-            throws IOException {
-        try {
-            // Process the authentication callback
-            Tokens tokens = authenticationController.handle(req, res);
-
-            // Store tokens in session
-            SessionUtils.set(req, "accessToken", tokens.getAccessToken());
-            SessionUtils.set(req, "idToken", tokens.getIdToken());
-
-            // Redirect to secure area
-            res.sendRedirect("/profile");
-        } catch (IdentityVerificationException e) {
-            // Authentication failed
-            e.printStackTrace();
+        if (accessToken == null || idToken == null) {
             res.sendRedirect("/login?error=auth_failed");
+            return;
         }
+
+        req.setAttribute("accessToken", accessToken);
+        req.setAttribute("idToken", idToken);
+        req.getRequestDispatcher("/WEB-INF/jsp/profile.jsp").forward(req, res);
     }
 }

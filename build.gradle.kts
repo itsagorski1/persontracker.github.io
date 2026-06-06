@@ -9,12 +9,12 @@ version = "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
-    implementation("com.auth0:mvc-auth-commons:1.11.1")
-    implementation("javax.servlet:javax.servlet-api:3.1.0")
-    implementation("javax.servlet:jstl:1.2")
 }
 
 dependencies {
+    implementation("com.auth0:mvc-auth-commons:1.11.1")
+    implementation("javax.servlet:javax.servlet-api:3.1.0")
+    implementation("javax.servlet:jstl:1.2")
     implementation("org.mongodb:mongodb-driver-sync:4.11.1")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.2")
 

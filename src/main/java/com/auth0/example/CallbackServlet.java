@@ -1,6 +1,9 @@
 package com.auth0.example;
 
 import com.auth0.AuthenticationController;
+import com.auth0.IdentityVerificationException;
+import com.auth0.SessionUtils;
+import com.auth0.Tokens;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -11,8 +14,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
-@WebServlet(urlPatterns = {"/login"})
-public class LoginServlet extends HttpServlet {
+@WebServlet(urlPatterns = {"/callback"})
+public class CallbackServlet extends HttpServlet {
 
     private AuthenticationController authenticationController;
 
@@ -27,19 +30,29 @@ public class LoginServlet extends HttpServlet {
     }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse res)
+    public void doGet(HttpServletRequest req, HttpServletResponse res)
             throws ServletException, IOException {
-        // Build the callback URL
-        String redirectUri = req.getScheme() + "://" + req.getServerName();
-        if ((req.getScheme().equals("http") && req.getServerPort() != 80) ||
-            (req.getScheme().equals("https") && req.getServerPort() != 443)) {
-            redirectUri += ":" + req.getServerPort();
-        }
-        redirectUri += "/callback";
+        handleCallback(req, res);
+    }
 
-        // Generate Auth0 authorization URL
-        String authorizeUrl = authenticationController.buildAuthorizeUrl(req, res, redirectUri)
-                .build();
-        res.sendRedirect(authorizeUrl);
+    @Override
+    public void doPost(HttpServletRequest req, HttpServletResponse res)
+            throws ServletException, IOException {
+        handleCallback(req, res);
+    }
+
+    private void handleCallback(HttpServletRequest req, HttpServletResponse res)
+            throws IOException {
+        try {
+            Tokens tokens = authenticationController.handle(req, res);
+
+            SessionUtils.set(req, "accessToken", tokens.getAccessToken());
+            SessionUtils.set(req, "idToken", tokens.getIdToken());
+
+            res.sendRedirect("/profile");
+        } catch (IdentityVerificationException e) {
+            e.printStackTrace();
+            res.sendRedirect("/login?error=auth_failed");
+        }
     }
 }

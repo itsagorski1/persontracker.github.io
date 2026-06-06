@@ -2,27 +2,39 @@ package com.auth0.example;
 
 import com.auth0.SessionUtils;
 
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
+import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-@WebServlet(urlPatterns = {"/logout"})
-public class LogoutServlet extends HttpServlet {
+@WebFilter(urlPatterns = {"/profile"})
+public class AuthenticationFilter implements Filter {
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse res)
-            throws ServletException, IOException {
+    public void init(FilterConfig filterConfig) {
+    }
 
-        // Clear session
-        SessionUtils.set(req, "accessToken", null);
-        SessionUtils.set(req, "idToken", null);
-        req.getSession().invalidate();
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+            throws IOException, ServletException {
+        HttpServletRequest req = (HttpServletRequest) request;
+        HttpServletResponse res = (HttpServletResponse) response;
 
-        // Redirect to login
+        if (SessionUtils.get(req, "idToken") == null) {
+            res.sendRedirect("/login");
+            return;
+        }
 
-        res.sendRedirect("/login");
+        chain.doFilter(request, response);
+    }
+
+    @Override
+    public void destroy() {
     }
 }
