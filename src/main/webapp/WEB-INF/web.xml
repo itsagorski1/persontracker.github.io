@@ -18,6 +18,6 @@
     </context-param>
     <context-param>
         <param-name>com.auth0.clientSecret</param-name>
-        <param-value>9waO8D_S6fezx1mEIAF5VaAXpykJMBFSK-ck4WegQ40DpfqG2E</param-value>
+        <param-value></param-value>
     </context-param>
 </web-app>
