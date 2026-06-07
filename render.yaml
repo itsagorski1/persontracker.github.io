@@ -7,9 +7,15 @@ services:
     autoDeployTrigger: commit
     healthCheckPath: /healthz
     envVars:
-      - key: PERSON_TRACKER_MONGO_URI
+      - key: MONGO_URI
         sync: false
-      - key: PERSON_TRACKER_MONGO_DB
+      - key: MONGO_DB
         value: persontracker
-      - key: PERSON_TRACKER_ALLOWED_ORIGIN
+      - key: ALLOWED_ORIGINS
+        sync: false
+      - key: AUTH0_REQUIRED
+        value: "true"
+      - key: AUTH0_DOMAIN
+        sync: false
+      - key: AUTH0_AUDIENCE
         sync: false

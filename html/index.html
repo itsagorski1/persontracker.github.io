@@ -273,6 +273,14 @@
             flex-wrap: wrap;
         }
 
+        .auth-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
         .empty {
             padding: 24px 0;
         }
@@ -317,6 +325,11 @@
                 <div>
                     <h1>Person Tracker</h1>
                     <p class="lede">A static, GitHub Pages friendly tracker for storing people, marriages, divorces, and relationship history right in the browser.</p>
+                </div>
+                <div class="auth-actions" id="authControls" hidden>
+                    <span class="note" id="authUser"></span>
+                    <button id="loginButton" type="button">Sign in</button>
+                    <button class="ghost" id="logoutButton" type="button" hidden>Sign out</button>
                 </div>
             </div>
             <div class="hero-stats">
@@ -456,6 +469,7 @@
         </section>
     </main>
 
+    <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
     <script src="./config.js"></script>
     <script>
         const API_BASE_STORAGE_KEY = "person-tracker-api-base";
@@ -466,6 +480,10 @@
         const apiBaseInput = document.getElementById("apiBaseInput");
         const saveApiButton = document.getElementById("saveApiButton");
         const resetButton = document.getElementById("resetButton");
+        const authControls = document.getElementById("authControls");
+        const authUser = document.getElementById("authUser");
+        const loginButton = document.getElementById("loginButton");
+        const logoutButton = document.getElementById("logoutButton");
 
         const personStatus = document.getElementById("personStatus");
         const marriageStatus = document.getElementById("marriageStatus");
@@ -484,6 +502,9 @@
         };
 
         let people = [];
+        let auth0Client = null;
+        let authReady = false;
+        let authenticated = false;
 
         function setStatus(node, message, type) {
             node.textContent = message;
@@ -538,10 +559,95 @@
             apiBaseInput.value = normalized;
         }
 
+        function getAuthConfig() {
+            const config = window.PERSON_TRACKER_CONFIG?.auth0 || {};
+            return {
+                domain: String(config.domain || "").trim(),
+                clientId: String(config.clientId || "").trim(),
+                audience: String(config.audience || "").trim()
+            };
+        }
+
+        function hasAuthConfig() {
+            const config = getAuthConfig();
+            return Boolean(config.domain && config.clientId && config.audience);
+        }
+
+        function updateAuthControls() {
+            if (!hasAuthConfig()) {
+                authControls.hidden = true;
+                return;
+            }
+
+            authControls.hidden = false;
+            loginButton.hidden = authenticated;
+            logoutButton.hidden = !authenticated;
+        }
+
+        function authRequiredMessage() {
+            people = [];
+            render();
+            setStatus(personStatus, "Sign in to load the tracker.", "error");
+            setStatus(marriageStatus, "Sign in to use tracker actions.", "error");
+            setStatus(divorceStatus, "Sign in to use tracker actions.", "error");
+        }
+
+        async function initAuth() {
+            if (!hasAuthConfig()) {
+                authReady = true;
+                updateAuthControls();
+                return;
+            }
+
+            const createClient = window.createAuth0Client || window.auth0?.createAuth0Client;
+            if (!createClient) {
+                setStatus(personStatus, "Auth0 could not load. Check your network and Auth0 SDK script.", "error");
+                return;
+            }
+
+            const config = getAuthConfig();
+            auth0Client = await createClient({
+                domain: config.domain,
+                clientId: config.clientId,
+                authorizationParams: {
+                    audience: config.audience,
+                    redirect_uri: window.location.origin + window.location.pathname
+                }
+            });
+
+            if (window.location.search.includes("code=") && window.location.search.includes("state=")) {
+                await auth0Client.handleRedirectCallback();
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+
+            authenticated = await auth0Client.isAuthenticated();
+            if (authenticated) {
+                const user = await auth0Client.getUser();
+                authUser.textContent = user?.name || user?.email || "Signed in";
+            } else {
+                authUser.textContent = "";
+            }
+
+            authReady = true;
+            updateAuthControls();
+        }
+
+        async function getAccessToken() {
+            if (!hasAuthConfig()) {
+                return "";
+            }
+            if (!authReady || !authenticated || !auth0Client) {
+                throw new Error("Sign in to continue.");
+            }
+            return auth0Client.getTokenSilently();
+        }
+
         async function request(path, options = {}) {
+            const token = await getAccessToken();
             const response = await fetch(getApiBase() + path, {
                 headers: {
                     "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
                     ...(options.headers || {})
                 },
                 ...options
@@ -697,6 +803,12 @@
         }
 
         async function refresh() {
+            if (hasAuthConfig() && (!authReady || !authenticated)) {
+                authRequiredMessage();
+                updateAuthControls();
+                return;
+            }
+
             try {
                 people = await request("/api/people", { method: "GET" });
                 render();
@@ -706,6 +818,27 @@
                 setStatus(divorceStatus, error.message, "error");
             }
         }
+
+        loginButton.addEventListener("click", async () => {
+            if (!auth0Client) {
+                return;
+            }
+            const config = getAuthConfig();
+            await auth0Client.loginWithRedirect({
+                authorizationParams: {
+                    audience: config.audience,
+                    redirect_uri: window.location.origin + window.location.pathname
+                }
+            });
+        });
+
+        logoutButton.addEventListener("click", () => {
+            auth0Client?.logout({
+                logoutParams: {
+                    returnTo: window.location.origin + window.location.pathname
+                }
+            });
+        });
 
         saveApiButton.addEventListener("click", async () => {
             setApiBase(apiBaseInput.value);
@@ -853,7 +986,11 @@
         });
 
         apiBaseInput.value = getApiBase();
-        refresh();
+        initAuth()
+            .then(refresh)
+            .catch(error => {
+                setStatus(personStatus, error.message, "error");
+            });
     </script>
 </body>
 </html>

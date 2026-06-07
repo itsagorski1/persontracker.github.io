@@ -1,70 +1,144 @@
 # Person Tracker
 
-This repository now includes a cloud-ready setup:
+Person Tracker is now structured for a static GitHub Pages frontend plus a Node.js API backed by MongoDB.
 
-- GitHub Pages for the frontend
-- MongoDB Atlas for shared data
-- Render for the hosted API
+## Project Tree
 
-## Architecture
+```text
+.
+├── html/
+│   ├── config.js
+│   └── index.html
+├── server/
+│   ├── index.js
+│   ├── middleware/
+│   │   ├── auth0.js
+│   │   └── validation.js
+│   ├── models/
+│   │   └── Person.js
+│   ├── public/
+│   ├── routes/
+│   │   ├── education.js
+│   │   ├── people.js
+│   │   └── relationships.js
+│   └── .env.example
+├── Dockerfile
+├── index.html
+├── package.json
+├── package-lock.json
+├── render.yaml
+└── README.md
+```
 
-- GitHub Pages serves the static frontend
-- Render runs the Java app and serves `/api/*`
-- MongoDB stores the shared people data
-- every computer sees the same records when it uses the same API base URL
+The old Java source is still present for reference, but the deployable backend entrypoint is `server/index.js`.
 
-## Deploy the frontend to GitHub Pages
+## API
+
+- `GET /healthz`
+- `GET /api/people`
+- `POST /api/people`
+- `POST /api/update`
+- `DELETE /api/people`
+- `DELETE /api/person/:name`
+- `POST /api/marriages`
+- `POST /api/divorces`
+- `POST /api/education`
+
+`POST /api/update` accepts the lightweight location payload from the handoff:
+
+```json
+{
+  "name": "john",
+  "lat": 0,
+  "lng": 0
+}
+```
+
+## Environment
+
+Copy [server/.env.example](/Users/jonah/Documents/code/java/random/persontracker/server/.env.example) to `.env` for local development.
+
+```text
+PORT=8080
+MONGO_URI=mongodb://localhost:27017/persontracker
+MONGO_DB=persontracker
+ALLOWED_ORIGINS=http://localhost:8080,https://YOUR-USER.github.io
+RATE_LIMIT_MAX=300
+AUTH0_REQUIRED=false
+AUTH0_DOMAIN=YOUR-TENANT.us.auth0.com
+AUTH0_AUDIENCE=https://persontracker-api
+```
+
+The server also accepts the older Java env names, such as `PERSON_TRACKER_MONGO_URI`, for easier migration.
+
+## Local Setup
+
+```sh
+npm install
+npm start
+```
+
+Open `http://localhost:8080`. The frontend is served from `html/`, and API calls go to the same origin by default.
+
+## GitHub Pages Frontend
 
 1. Push the repo to GitHub.
-2. In the repository settings, open `Pages`.
-3. Set the source to `Deploy from a branch`.
-4. Choose the `main` branch and the `/ (root)` folder.
-5. Save.
+2. In repository settings, open `Pages`.
+3. Choose `Deploy from a branch`.
+4. Select `main` and `/ (root)`.
 
-## Deploy the API to Render
+The root [index.html](/Users/jonah/Documents/code/java/random/persontracker/index.html) redirects visitors to the static app in `html/index.html`.
 
-Render officially supports managing services with `render.yaml` Blueprints, including Docker-based web services and `healthCheckPath`, so this repo includes a ready-made [render.yaml](c:/Users/jonah/code/java/random/persontracker/render.yaml). Source: Render Blueprint docs and YAML reference.
+## Auth0 Setup
+
+Create two Auth0 resources:
+
+1. Application: choose `Single Page Application`.
+2. API: use an identifier such as `https://persontracker-api`.
+
+In the Auth0 Application settings, add these URLs:
+
+```text
+Allowed Callback URLs:
+http://localhost:8080/,https://YOUR-USER.github.io/YOUR-REPO/html/index.html
+
+Allowed Logout URLs:
+http://localhost:8080/,https://YOUR-USER.github.io/YOUR-REPO/html/index.html
+
+Allowed Web Origins:
+http://localhost:8080,https://YOUR-USER.github.io
+```
+
+Use your real Pages URL. If your Pages site serves from a custom domain or a different path, use that exact app URL instead.
+
+The frontend uses Auth0's SPA SDK, so it only needs public values in [html/config.js](/Users/jonah/Documents/code/java/random/persontracker/html/config.js): domain, client id, and API audience. The backend validates access tokens with Auth0's `express-oauth2-jwt-bearer` middleware.
+
+## Render Deployment
 
 1. Create a MongoDB Atlas cluster and database user.
-2. Copy your Atlas Java driver connection string from Atlas.
-   MongoDB’s official docs say to get this from `Connect` -> `Drivers`, and to use the Atlas connection string for your application.
-3. In Atlas Network Access, allow connections from your hosted API.
-   For the simplest public setup, allow the Render service to connect per Atlas network access rules.
-4. In Render, create a new Blueprint from this repo.
-5. When prompted, set:
-   `PERSON_TRACKER_MONGO_URI` = your Atlas connection string
-   `PERSON_TRACKER_ALLOWED_ORIGIN` = your exact GitHub Pages origin, such as `https://YOUR-USER.github.io`
-6. Deploy the Blueprint.
-7. Copy the Render API URL, such as `https://persontracker-api.onrender.com`.
+2. In Render, create a Blueprint from this repo.
+3. Set `MONGO_URI` to your Atlas connection string.
+4. Set `ALLOWED_ORIGINS` to your exact GitHub Pages origin, for example `https://YOUR-USER.github.io`.
+5. Set `AUTH0_DOMAIN` to your Auth0 tenant domain, for example `YOUR-TENANT.us.auth0.com`.
+6. Set `AUTH0_AUDIENCE` to the Auth0 API identifier, for example `https://persontracker-api`.
+7. Keep `AUTH0_REQUIRED=true` on Render.
+8. Deploy.
 
-## Connect the frontend to the cloud API
+[render.yaml](/Users/jonah/Documents/code/java/random/persontracker/render.yaml) uses the Dockerfile and checks `/healthz`.
 
-You have two ways to point the GitHub Pages app at the hosted backend:
+## Connect the Frontend
 
-1. Quick way:
-   Open the Pages site, paste the Render URL into the `API base URL` field, and save it.
-
-2. Repo-configured way:
-   Edit [html/config.js](c:/Users/jonah/code/java/random/persontracker/html/config.js) and set:
+For a repo-wide default, edit [html/config.js](/Users/jonah/Documents/code/java/random/persontracker/html/config.js):
 
 ```js
 window.PERSON_TRACKER_CONFIG = {
-    apiBaseUrl: "https://your-render-service.onrender.com"
+    apiBaseUrl: "https://your-render-service.onrender.com",
+    auth0: {
+        domain: "YOUR-TENANT.us.auth0.com",
+        clientId: "YOUR_AUTH0_SPA_CLIENT_ID",
+        audience: "https://persontracker-api"
+    }
 };
 ```
 
-Then push again so every browser uses the same backend automatically.
-
-## What ships
-
-- `index.html` redirects GitHub Pages visitors to the app
-- `html/index.html` contains the GitHub Pages frontend
-- `html/config.js` lets you hardcode the hosted API URL for all clients
-- `src/main/java/.../PersonTrackerServer.java` exposes the shared API
-- `Dockerfile` packages the Java API for cloud hosting
-- `render.yaml` defines the Render web service
-- MongoDB holds the shared data
-
-## Important note
-
-I checked MongoDB’s official docs first: Atlas App Services / Data API / HTTPS Endpoints are deprecated or end-of-life, so this repo does not use that path. The supported setup here is MongoDB Atlas plus a separately hosted API.
+You can also paste the backend URL into the frontend's `API base URL` field and save it in the browser.

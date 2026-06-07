@@ -1,0 +1,24 @@
+{
+  "name": "persontracker-nodejs",
+  "version": "1.0.0",
+  "description": "Node.js backend and static frontend for Person Tracker.",
+  "main": "server/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "check": "node --check server/index.js && node --check server/middleware/auth0.js && node --check server/routes/people.js && node --check server/routes/relationships.js && node --check server/routes/education.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-oauth2-jwt-bearer": "^1.9.0",
+    "express-openid-connect": "^2.20.2",
+    "express-rate-limit": "^7.5.0",
+    "mongoose": "^8.9.5"
+  }
+}

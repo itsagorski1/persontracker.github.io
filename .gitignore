@@ -1,6 +1,10 @@
 .gradle
 .gradle-user-home/
 build/
+node_modules/
+.env
+server/.env
+server/index.js
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/

@@ -1,142 +1,113 @@
-# Person Tracker Session Handoff
+# PersonTracker Java → Node.js Migration
 
-Date: 2026-04-28
-Project: `persontracker`
+Source repo:
+- https://github.com/itsagorski1/persontracker.github.io
 
-## What the user asked for
+Target repo:
+- https://github.com/itsagorski1/persontracker-nodejs.github.io
 
-1. Use the code in `src/main/java` and make it into an HTML page.
-2. Redo that work in the `html/` folder.
-3. Make it use MongoDB.
-4. Save the session so work can continue later from another computer.
+Goal:
+Convert the existing Java backend/API into a Node.js backend while preserving frontend behavior/UI.
 
-## What was built
+## Stack
 
-An HTML front end was created at `html/index.html`.
+Backend:
+- Node.js
+- Express
+- MongoDB + Mongoose
+- dotenv
+- cors
 
-It now supports:
+Optional:
+- Socket.IO for realtime updates
+- JWT/Auth0 auth
+- rate limiting
 
-- adding a person
-- recording a marriage
-- recording a divorce
-- viewing saved people and relationship history
+Frontend:
+- Keep existing frontend mostly unchanged
+- Replace Java API calls with fetch() to Express API
 
-The app was then changed from browser `localStorage` to a Java backend backed by MongoDB.
+## Required Deliverables
 
-## Files added or changed
+1. Full Node.js backend
+2. Equivalent API routes
+3. MongoDB schemas/models
+4. Updated frontend API calls
+5. Environment variable support
+6. Deployment-ready structure
+7. README with setup instructions
 
-### Frontend
+## Desired Project Structure
 
-- `html/index.html`
+persontracker-nodejs/
+├── server/
+│   ├── index.js
+│   ├── routes/
+│   ├── models/
+│   ├── middleware/
+│   ├── public/
+│   └── .env.example
+├── package.json
+└── README.md
 
-### Build configuration
+## Core API Requirements
 
-- `build.gradle.kts`
+GET /api/people
+- returns all tracked people
 
-Added:
+POST /api/update
+Body:
+{
+  "name": "john",
+  "lat": 0,
+  "lng": 0
+}
 
-- Gradle `application` plugin
-- MongoDB Java driver
-- Jackson databind
-- main class pointing to `com.jonah.code.java.random.persontracker.app.PersonTrackerServer`
+- updates or inserts person location
 
-### New backend files
+Optional:
+DELETE /api/person/:name
 
-- `src/main/java/com/jonah/code/java/random/persontracker/app/PersonTrackerServer.java`
-- `src/main/java/com/jonah/code/java/random/persontracker/app/MongoPersonRepository.java`
-- `src/main/java/com/jonah/code/java/random/persontracker/app/TrackerPerson.java`
-- `src/main/java/com/jonah/code/java/random/persontracker/app/MarriageRequest.java`
-- `src/main/java/com/jonah/code/java/random/persontracker/app/DivorceRequest.java`
+## Mongo Schema
 
-### Existing file fixed so the project compiles
+Person:
+- name
+- lat
+- lng
+- updated
 
-- `src/main/java/com/jonah/code/java/random/persontracker/person/personfileeditor/PersonFileEditor.java`
+## Notes
 
-## Current architecture
+- GitHub Pages cannot host Node.js
+- Frontend remains on GitHub Pages
+- Backend should deploy to Render or Railway
+- Frontend should call deployed backend URL
 
-### Frontend
+Example:
+fetch("https://YOUR-APP.onrender.com/api/people")
 
-`html/index.html` calls these API endpoints:
+## Security Requirements
 
-- `GET /api/people`
-- `POST /api/people`
-- `DELETE /api/people`
-- `POST /api/marriages`
-- `POST /api/divorces`
+- use .env for secrets
+- never expose Mongo URI
+- validate request bodies
+- add basic rate limiting
+- enable CORS safely
 
-### Backend
+## Tasks
 
-`PersonTrackerServer.java`:
+1. Analyze current Java project structure
+2. Identify backend functionality
+3. Port backend logic to Express
+4. Replace Java-specific code
+5. Preserve frontend behavior
+6. Ensure deployability
 
-- starts a small HTTP server on port `8080` by default
-- serves files from the `html/` folder
-- exposes the JSON API above
+## Output Format
 
-`MongoPersonRepository.java`:
-
-- connects to MongoDB
-- uses database `persontracker` by default
-- uses collection `people`
-- creates a unique index on lowercased names
-
-## Environment variables supported
-
-- `PERSON_TRACKER_MONGO_URI`
-- `PERSON_TRACKER_MONGO_DB`
-- `PERSON_TRACKER_PORT`
-
-Defaults:
-
-- Mongo URI: `mongodb://localhost:27017`
-- Mongo DB: `persontracker`
-- Port: `8080`
-
-## Verification already done
-
-This command succeeded:
-
-```powershell
-./gradlew compileJava
-```
-
-## Current blocker
-
-This command failed:
-
-```powershell
-./gradlew run
-```
-
-Reason:
-
-- MongoDB was not running on `localhost:27017`
-- the server timed out trying to connect
-
-Observed failure:
-
-- `com.mongodb.MongoTimeoutException`
-- connection refused to `localhost:27017`
-
-## Exact next step
-
-Start MongoDB locally, then run:
-
-```powershell
-./gradlew run
-```
-
-After that, open:
-
-```text
-http://localhost:8080
-```
-
-## Short conversation summary
-
-The work started by converting the rough Java person-tracking classes into an HTML page. That page first used browser storage. Then the user asked to move it to MongoDB, so a Java server and Mongo-backed repository were added and the HTML was switched to API calls. The remaining issue is not code compilation; it is only that MongoDB was not running during the last test.
-
-## How to resume from another computer
-
-Open this repository on the other computer and share this file at the start of the next session. The most useful instruction is:
-
-> Continue from `SESSION_HANDOFF.md`. The frontend is in `html/index.html`, the backend is in `src/main/java/com/jonah/code/java/random/persontracker/app/`, and the current blocker is getting MongoDB running so `./gradlew run` works.
+Generate:
+- complete file tree
+- all code files
+- package.json
+- README
+- deployment instructions
